@@ -82,7 +82,7 @@ verdict = Courtroom(LLM(), case, jurors=3).run()
 
 `skill/ai-court/` は、Claude のアプリでそのまま使えるスキルです。
 `ai-court` フォルダを zip にして、claude.ai の「設定 → 機能（Capabilities）→ スキル」からアップロードすると、
-会話で「この問題を裁判にかけて」と頼むだけで、Claude が弁護士・裁判官・陪審員を演じて判決まで出します。
+会話で合言葉「開廷」に続けて問題を書くだけで（例:「開廷 AとBどっちがいい？」）、Claude が弁護士・裁判官・陪審員を演じて判決まで出します。
 API キーは不要です。
 
 ## ファイル構成
