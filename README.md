@@ -1,60 +1,94 @@
-# Open-Source-Court-Project
-The Open Source Court Project is a groundbreaking, fully digitized legal platform designed to conduct trials using advanced AI agents. This innovative system streamlines the traditional trial process by leveraging AI capabilities for legal analysis and decision-making based on information available online.
+# Open-Source-Court-Project（作り直し版）
 
-### Key Features:
+AI の **弁護士・裁判官・陪審員** が、事件ファイルにもとづいて模擬裁判を行うプログラムです。
+AI には Anthropic の Claude を使い、法廷でのやり取りはすべて日本語で行います。
 
-1. **AI Judges and Lawyers**: The courtroom utilizes sophisticated AI agents programmed to serve as judges and lawyers. These agents are equipped with deep learning algorithms and access to extensive online legal databases, enabling them to analyze case law, statutes, and legal precedents.
+> 元のアイデアは [starsitar/Open-Source-Court-Project](https://github.com/starsitar/Open-Source-Court-Project) です。
+> 元のコードは動かない状態だったため、このフォークでは設計を引き継いでコードを全面的に書き直しています。
 
-2. **Automated Case Processing**: From the initiation of a case to the final judgment, every step is automated. The AI agents handle the filing of charges, responses, and pre-trial motions. The entire legal process, including evidence presentation, witness testimonies (simulated), and cross-examinations, is conducted digitally.
+## できること
 
-3. **Online Data Integration**: The AI agents rely on a vast array of online legal resources to gather case-relevant information. This integration ensures that the arguments and judgments are informed by the most current legal standards and precedents.
+1. **事前審理** — 当事者の申し立て（例: 証拠の除外）を AI 裁判官が「認める／退ける」で判断します
+2. **事前調査**（任意）— AI 弁護士が Web 検索で判例・法律・ルールを調べます
+3. **冒頭陳述** — 原告側・被告側がそれぞれ立場を述べます
+4. **争点ごとの弁論** — 主張 → 反論 → 再反論のあと、裁判官が論点を整理します
+5. **最終弁論**
+6. **陪審評議** — 視点の違う AI 陪審員が、互いの票を見ずに投票します
+7. **判決** — 裁判官が主文と理由を書きます
 
-4. **Transparent Decision-Making**: The AI Judge provides a verdict based on logical analysis of the evidence and legal principles. The system is designed to ensure transparency in the decision-making process, with detailed documentation of the AI's rationale.
+やり取りはすべて画面に表示され、`transcripts/` に Markdown 形式で保存されます。
 
-5. **Learning and Adaptation**: The platform is built on open source technology, allowing continuous improvement and learning from each case. It adapts and evolves, enhancing its legal reasoning over time.
+## 使い方
 
-6. **Accessibility and Efficiency**: The system is accessible remotely, reducing the need for physical court appearances. This leads to increased efficiency and potentially faster resolution of cases.
+```bash
+pip install -r requirements.txt
+export ANTHROPIC_API_KEY=sk-ant-...   # Anthropic の API キー
 
-7. **Human Oversight**: Despite its advanced capabilities, the system is designed to operate under human oversight, ensuring that ethical standards are upheld and that the AI's operations remain aligned with legal norms.
+# サッカーの判定をめぐる裁判
+python main.py examples/offside_dispute.json
 
-### Applications:
+# マンションの騒音トラブル。陪審員5人、Web で判例を調べさせる
+python main.py examples/noise_dispute.json --jurors 5 --research
 
-- **Low-Stakes Civil Litigation**: Ideal for handling civil cases where the complexity is manageable and the stakes are not excessively high.
-- **Legal Education and Simulation**: Serves as an educational tool for law students and professionals to simulate court cases and understand legal proceedings.
-- **Research and Analysis**: Useful for legal researchers and practitioners to analyze hypothetical legal scenarios or to explore various legal strategies.
+# API キーなし・料金なしで流れだけ確認する
+python main.py examples/noise_dispute.json --dry-run
+```
 
-### Ethical and Legal Considerations:
+| オプション | 意味 |
+|---|---|
+| `--jurors N` | 陪審員の人数（既定 3。0 で陪審なし） |
+| `--research` | 弁護士に Web 検索で事前調査をさせる |
+| `--effort` | AI の考える深さ `low` / `medium`（既定）/ `high` / `xhigh` / `max` |
+| `--model` | 使う Claude のモデル（既定 `claude-opus-5-5`） |
+| `--out` | 法廷記録の保存先 |
+| `--dry-run` | API を呼ばずにダミー応答で動かす |
+| `--quiet` | 画面に記録を表示しない |
 
-- The system places a strong emphasis on ethical AI, with safeguards to prevent bias and ensure fairness.
-- It respects data privacy and confidentiality, crucial for legal proceedings.
-- The AI Courtroom is not a replacement for traditional courts in serious criminal cases or complex civil matters where nuanced human judgment is irreplaceable.
+1 回の裁判で、AI を 20〜30 回ほど呼び出します（争点の数と陪審員の人数によって変わります）。
+料金を抑えたいときは、争点を減らすか `--effort low` を使ってください。
 
-This Open Source AI Courtroom represents a novel approach to legal proceedings, harnessing the power of AI to offer a more streamlined, accessible, and efficient judicial process. It stands as a testament to the potential of technology in transforming traditional legal systems, while also highlighting the need for careful, ethically-informed implementation.
+## 事件ファイルの書き方
 
-### Steps:
+`examples/` の JSON をコピーして書き換えるのがいちばん簡単です。
 
-### 1. **Case Initialization**
-   - The AI system receives details of the case, including charges and relevant legal questions.
+```json
+{
+  "title": "事件名",
+  "plaintiff": { "name": "訴える側", "claim": "訴える側の主張" },
+  "defendant": { "name": "訴えられる側", "claim": "訴えられる側の主張" },
+  "facts": ["事実1", "事実2"],
+  "evidence": ["証拠1"],
+  "rules": "判断の基準にする法律やルール（任意）",
+  "aspects": ["争点1", "争点2"],
+  "motions": [{ "by": "defendant", "text": "事前審理での申し立て（任意）" }]
+}
+```
 
-### 2. **Data Gathering and Analysis**
-   - **AI Lawyer Agents** collect data from online legal resources and analyze it to build their cases.
+必須なのは `title`・`plaintiff`・`defendant`・`facts`・`aspects` です。
 
-### 3. **Filing of Charges and Responses**
-   - AI Prosecution Agent files formal charges, while AI Defense Agent prepares and submits a response.
+## 他のプロジェクトで使う
 
-### 4. **Pre-Trial Motions and Hearings (Simulation)**
-   - AI agents submit and argue pre-trial motions digitally.
-   - An AI Judge Agent reviews these motions and makes decisions based on legal principles.
+```python
+from court import Courtroom, LLM, load_case
 
-### 5. **Trial Proceedings**
-   - **Opening Statements**: AI lawyers present their cases' outlines.
-   - **Presentation of Evidence and Witnesses**: Digital evidence and simulated witness testimonies are presented.
-   - **Cross-Examination**: AI lawyers analyze and question the presented evidence and testimonies.
-   - **Closing Arguments**: AI agents synthesize trial information into final arguments.
+case = load_case("examples/offside_dispute.json")
+verdict = Courtroom(LLM(), case, jurors=3).run()
+```
 
-### 6. **Judgement**
-   - The AI Judge Agent delivers a verdict based on the analysis of evidence, arguments, and legal precedents.
+「複数の AI に立場を与えて議論させ、最後に中立の AI が判定する」という仕組みなので、
+裁判以外（スポーツの判定、企画案の比較、ディベート練習など）にも使えます。
 
-### 7. **Documentation and Learning**
-   - The trial process and decision rationales are documented for future reference and learning.
+## ファイル構成
 
+| ファイル | 役割 |
+|---|---|
+| `main.py` | コマンドラインの入口 |
+| `court/case.py` | 事件ファイルの読み込み |
+| `court/agents.py` | AI 弁護士・裁判官・陪審員 |
+| `court/courtroom.py` | 裁判の進行と法廷記録 |
+| `court/llm.py` | Claude API の呼び出し（Web 検索・構造化出力・ダミー応答） |
+
+## 注意
+
+これは学習・研究・遊び目的の **模擬裁判** です。出てくる判決に法的な効力はなく、
+実際の法律相談の代わりにはなりません。
